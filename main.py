@@ -11,37 +11,28 @@ class Manager(ScreenManager):
 class Menu(Screen):
     pass
 
-class Drill(Screen):
-    pass
-
-class ScoreSplash(App):
-    def build(self):
+class Drill(BoxLayout):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
         self.point = 0
         self.attempt = 0
         self.accuracy =.0
 
-        # splash = Image(source='src/splash.png')
-        # wrong = Image(source='src/wrong.png')
-        self.counter = Label(text='0/0', font_size=30)
-        splash = Button(text='acertou', font_size=30, on_press=self.shot)
-        wrong = Button(text='errou', font_size=30, on_press=self.shot)
-        layoutButton = BoxLayout()
-        layoutButton.add_widget(self.counter)
-        layoutButton.add_widget(splash)
-        layoutButton.add_widget(wrong)
-        return layoutButton
-    
-    def shot(self, button):
-        status = str(self.point)+'/'+str(self.attempt)+' -> '+str(round(self.accuracy*100,1))+'%'
-        if button.text == 'acertou':
+    def shot(self, button, status):
+        if button.background_normal == 'img/splash.png':
             self.point += 1
             self.attempt += 1
             self.accuracy = self.point/self.attempt
-            self.counter.text = status
-        if button.text == 'errou':
+        if button.background_normal == 'img/wrong.png':
             self.attempt += 1
             self.accuracy = self.point/self.attempt
-            self.counter.text = status
 
+        points = str(self.point)+'/'+str(self.attempt)+' -> '+str(round(self.accuracy*100,1))+'%'
+        status.text = points
 
-ScoreSplash().run()
+class Splashscore(App):
+    def build(self):
+        return Drill()
+    
+
+Splashscore().run()

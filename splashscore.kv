@@ -1,0 +1,26 @@
+<Drill>:
+    orientation: 'vertical'
+    Label:
+        id: status
+        text: '0/0'
+        font_size: 30
+    BoxLayout:
+        Button:
+            id: f_splash
+            background_color: 255,255,255
+            background_normal: 'img/splash.png'
+            border: 10,10,10,10
+            font_size: 30
+            on_release: root.shot(f_splash, status)
+        Button:
+            canvas:
+                Color:
+                    rgba:100,255,1,0.5
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+            id: f_wrong
+            background_normal: 'img/wrong.png'
+            border: 0,0,0,0
+            font_size: 30
+            on_release: root.shot(f_wrong, status)
