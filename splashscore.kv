@@ -1,26 +1,69 @@
-<Drill>:
-    orientation: 'vertical'
-    Label:
-        id: status
-        text: '0/0'
-        font_size: 30
+<Manager>:
+    Menu:
+        name:'menu'
+    Drill:
+        name:'drill'
+    SavedScore:
+        name:'savedscore'
+
+<Menu>:
     BoxLayout:
+        orientation:'vertical'
+        padding: 100
+        spacing: 50
         Button:
-            id: f_splash
-            background_color: 255,255,255
-            background_normal: 'img/splash.png'
-            border: 10,10,10,10
-            font_size: 30
-            on_release: root.shot(f_splash, status)
+            text:'Iniciar sessao'
+            on_release: app.root.current = 'drill'
         Button:
-            canvas:
-                Color:
-                    rgba:100,255,1,0.5
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-            id: f_wrong
-            background_normal: 'img/wrong.png'
-            border: 0,0,0,0
+            text: 'Historico'
+            on_release: app.root.current = 'savedscore'
+        Button:
+            text:'Sair'
+            on_release: app.stop()
+            
+<Drill>:
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            ActionView:
+                ActionPrevious:
+                    title:'Retonar'
+                    on_release: app.root.current = 'menu'
+                ActionButton:
+                    text:'Finalizar sessao'
+                    on_release: root.saveDrill()
+                    on_release: app.root.current = 'menu'
+        Label:
+            id: status
+            text: '0/0'
             font_size: 30
-            on_release: root.shot(f_wrong, status)
+        BoxLayout:
+            padding:50
+            Button:
+                id: f_splash
+                background_normal: 'img/splash.png'
+                on_release: root.shot_splash(status)
+            Button:
+                id: f_wrong
+                background_normal: 'img/wrong.png'
+                on_release: root.shot_wrong(status)
+
+<SavedScore>:
+    BoxLayout:
+        orientation:'vertical'
+        ActionBar:
+            ActionView:
+                ActionPrevious:
+                    title:'Retonar'
+                    on_release: app.root.current = 'menu'
+        GridLayout:
+            size_hint_y: None
+            height: 100
+            cols: 3
+            Label:
+                text: 'Aproveitamento'
+            Label:
+                text: 'Acertos'
+            Label:
+                text: 'Data'
+            
