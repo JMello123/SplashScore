@@ -29,16 +29,17 @@
                 ActionPrevious:
                     title:'Retonar'
                     on_release: app.root.current = 'menu'
-                    on_release: root.reset_status()
+                    on_release: app.root.reset_status()
                 ActionButton:
                     text:'Finalizar sessao'
-                    on_release: root.saveDrill()
+                    on_release: app.root.saveDrill()
                     on_release: app.root.current = 'menu'
 
         Label:
             id: status
             text: '0/0'
             font_size: 30
+
         BoxLayout:
             padding:50
             Button:
@@ -54,6 +55,7 @@
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
+            # background_color: [1,1,1,1]
             ActionView:
                 ActionPrevious:
                     title:'Retonar'
@@ -76,9 +78,10 @@
                 orientation:'vertical'
                 size_hint_y: None
                 height: self.minimum_height
-                background_color: 20,20,50
+                
 
 <SessionScore>:
+    id: boxSessions
     size_hint_y: None
     height: 100
     Label:
