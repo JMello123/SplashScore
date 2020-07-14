@@ -1,0 +1,141 @@
+<Manager>:
+    Menu:
+        name:'menu'
+    Drill:
+        name:'drill'
+    SavedScore:
+        name:'savedscore'
+
+<Menu>:
+    BoxLayout:
+        orientation:'vertical'
+        padding: 100
+        spacing: 50
+        canvas:
+            Color: 
+                rgba:1,1,1,1
+            Rectangle:
+                pos:self.pos
+                size:self.size
+                source:'img/background.jpg'
+        Button:
+            text:'Iniciar sessão'
+            on_release: app.root.current = 'drill'
+        Button:
+            text: 'Histórico'
+            on_release: app.root.current = 'savedscore'
+        Button:
+            text:'Sair'
+            on_release: app.stop()
+            
+<Drill>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas:
+            Color: 
+                rgba:1,1,1,1
+            Rectangle:
+                pos:self.pos
+                size:self.size
+                source:'img/background.jpg'
+        ActionBar:
+            ActionView:
+                ActionPrevious:
+                    title:'Retonar'
+                    on_release: 
+                        app.root.current = 'menu'
+                        root.manager.transition.direction = "right"
+                        root.session.reset_status()
+                ActionButton:
+                    text:'Finalizar sessão'
+                    on_release: 
+                        root.finish_session()
+                        app.root.current = 'menu'
+
+        Label:
+            id: status
+            text: '0/0'
+            font_size: 30
+
+        GridLayout:
+            id: boxBall
+            cols: 10
+            height: 32
+            size_hint_x: .5
+            pos_hint: {'x':.25}
+            spacing: '5dp'
+
+        BoxLayout:
+            spacing: '50dp'
+            padding: [10,10]
+            Button:
+                border:0,0,0,0
+                id: f_splash
+                background_down:'img/splash_press.png'
+                background_normal: 'img/splash.png'
+                on_release: root.shot_splash(status)
+            Button:
+                id: f_wrong
+                border:0,0,0,0
+                background_down:'img/wrong_press.png'
+                background_normal: 'img/wrong.png'
+                on_release: root.shot_wrong(status)
+
+<SavedScore>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas:
+            Color: 
+                rgba:1,1,1,1
+            Rectangle:
+                pos:self.pos
+                size:self.size
+                source:'img/background.jpg'
+        ActionBar:
+            ActionView:
+                ActionPrevious:
+                    title:'Retonar'
+                    on_release: app.root.current = 'menu'
+        GridLayout:
+            size_hint_y: None
+            height: 100
+            cols: 4
+            canvas:
+                Color: 
+                    rgba:.3,.3,.3,.7
+                Rectangle:
+                    pos:self.pos
+                    size:self.size
+            Label:
+                text: 'Aproveitamento'
+            Label:
+                text: 'Acertos'
+            Label:
+                text: 'Melhor sequência'
+            Label:
+                text: 'Data'
+        ScrollView:
+            BoxLayout:
+                id: box
+                orientation:'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                
+
+<SessionScore>:
+    id: boxSessions
+    size_hint_y: None
+    canvas:
+        Color: 
+            rgba:.4,.4,.4,.7
+        Rectangle:
+            pos:self.pos
+            size:self.size
+    Label:
+        id:accuracy
+    Label:
+        id:splash
+    Label:
+        id:best_sequence
+    Label:
+        id:date
