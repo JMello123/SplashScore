@@ -2,102 +2,90 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.image import Image
 from kivy.properties import NumericProperty
-from kivy.uix.label import Label
+from kivy.config import Config
+from kivy.lang.builder import Builder
+
 import json
 import time
 
+from controllerdrill import ControllerDrill
+
+Config.read("config.ini")
+
 class Manager(ScreenManager):
 
-    def __init__(self,**kwargs):
-        super().__init__(**kwargs)
-        self.status = {
-            'point': 0,
-            'attempt':0,
-            'accuracy':.0,
-            'sequence':[0,0],
-            'best_sequence':0,
-            'worst_sequence':0 
-        }
-        self.data = []
-
-    def increment_point(self,*args):
-        self.status['point'] += 1
-        self.status['attempt'] += 1
-        self.status['accuracy'] = self.status['point']/self.status['attempt']
-        self.status['sequence'][0] += 1
-        self.status['sequence'][1] = 0
-        self.check_sequence()
-        text = str(self.status['point'])+ '/' +str(self.status['attempt']) + ' -> ' + str(round(self.status['accuracy']*100,1))+ '%'
-        print(self.status)
-        return text
-
-    def increment_error(self, *args):
-        self.status['attempt'] += 1
-        self.status['accuracy'] = self.status['point']/self.status['attempt']
-        self.status['sequence'][0] = 0
-        self.status['sequence'][1] += 1
-        self.check_sequence()
-        text = str(self.status['point'])+ '/' +str(self.status['attempt']) + ' -> ' + str(round(self.status['accuracy']*100,1))+ '%'
-        print(self.status)
-        return text
-        
-    def check_sequence(self):
-            if self.status['sequence'][0] > self.status['best_sequence']:
-                self.status['best_sequence'] = self.status['sequence'][0]
-            if self.status['sequence'][1] > self.status['worst_sequence']:
-                self.status['worst_sequence'] = self.status['sequence'][1]
-        
-    def reset_status(self):
-        self.status['point'] = 0
-        self.status['attempt'] = 0
-        self.status['accuracy'] = .0
-        
+    data = []
+     
     def loadDrill(self,*args):
         path = App.get_running_app().user_data_dir+'/'
         try:
             with open(path+'saved_score.json','r') as saved_score:
                     self.data = json.load(saved_score)
                     return self.data
-
         except FileNotFoundError:
             open(path+'saved_score.json','x')
             return self.data
         except json.JSONDecodeError:
             return []
         
-    def saveDrill(self, *args):
-        date = time.localtime()
-        saved_date = f'{date.tm_mday}/{date.tm_mon}/{date.tm_year} {date.tm_hour}:{date.tm_min}'
+    def saveDrill(self, savedata, *args):
+        self.data = self.loadDrill()
         path = App.get_running_app().user_data_dir+'/'
-        self.data.append({'accuracy':self.status['accuracy'], 
-                          'points':self.status['point'], 
-                          'date':saved_date})
+        self.data.append(savedata)
         with open(path + 'saved_score.json', 'w') as saved_score:
             json.dump(self.data, saved_score)
-        self.reset_status()
+
         
-    
 class Menu(Screen):
     pass
 
 class Drill(Screen):
-    
+
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self.session = ControllerDrill()
+        self.last_shots = [0,0,0,0,0,0,0,0,0,0]
+
     def on_pre_enter(self):
         Window.bind(on_keyboard=self.back_menu)
-        # App.get_running_app().root.loadDrill()
+        self.session.reset_status()
+        self.draw_balls(self.last_shots)
 
     def on_pre_leave(self):
         Window.unbind(on_keyboard=self.back_menu)
         self.ids.status.text = '0/0'
 
+    def draw_balls(self, balls:list):
+        self.ids.boxBall.clear_widgets()
+        for ball in balls:
+            if ball == 0:
+                self.ids.boxBall.add_widget(Image(source='img/grey_ball.png'))
+            if ball == 1:
+                self.ids.boxBall.add_widget(Image(source='img/green_ball.png'))
+            if ball == 2:
+                self.ids.boxBall.add_widget(Image(source='img/red_ball.png'))
+    
     def shot_splash(self, status):
-        points_text = App.get_running_app().root.increment_point()
+        points_text, self.last_shots = self.session.increment_point()
+        self.draw_balls(self.last_shots)
         status.text = str(points_text)
 
     def shot_wrong(self, status):
-        points_text = App.get_running_app().root.increment_error()
+        points_text, self.last_shots = self.session.increment_error()
+        self.draw_balls(self.last_shots)
         status.text = str(points_text)
+
+    def finish_session(self, *args):
+        date = time.localtime()
+        saved_date = f'{date.tm_mday}/{date.tm_mon}/{date.tm_year} {date.tm_hour}:{date.tm_min}'
+        App.get_running_app().root.saveDrill(
+            {'accuracy':self.session.status['accuracy'], 
+                'points':self.session.status['point'], 
+                'best_sequence':self.session.status['best_sequence'],
+                'worst_sequence':self.session.status['worst_sequence'],
+                'date':saved_date})
 
     def back_menu(self, window, key, *args):
             if key == 27:
@@ -106,12 +94,12 @@ class Drill(Screen):
             return True
 
 
+
 class SavedScore(Screen):
 
     def on_pre_enter(self):
         self.ids.box.clear_widgets()
         sessions = App.get_running_app().root.loadDrill()
-        print(sessions)
         for session in sessions:
             self.ids.box.add_widget(SessionScore(session))
     
@@ -122,15 +110,19 @@ class SessionScore(BoxLayout):
         super().__init__(**kwargs)
         self.ids.accuracy.text = str(round(session['accuracy']*100,1))+"%"
         self.ids.splash.text = str(session['points'])
-        self.ids.best_sequence.text = 'Nada ainda'
+        self.ids.best_sequence.text = str(session['best_sequence'])
         self.ids.date.text = str(session['date'])
 
+
+            
+
     
-
-
 class Splashscore(App):
 
     def build(self):
+        # importando e lendo manualmente o arquivo kv para forçar a codificação utf-8 
+        # e corrigir problemas de caracteres incompatíveis  
+        Builder.load_string(open("splashscoreapp.kv", encoding="utf-8").read(), rulesonly=True)
         return Manager()
 
     
