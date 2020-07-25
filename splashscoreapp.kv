@@ -5,12 +5,16 @@
         name:'drill'
     SavedScore:
         name:'savedscore'
+    SavedDetails:
+        name:'saved_details'
+    Settings:
+        name:'settings'
+
 
 <Menu>:
     BoxLayout:
         orientation:'vertical'
-        padding: 100
-        spacing: 50
+        padding: '50dp',0
         canvas:
             Color: 
                 rgba:1,1,1,1
@@ -18,15 +22,41 @@
                 pos:self.pos
                 size:self.size
                 source:'img/background.jpg'
-        Button:
-            text:'Iniciar sessão'
-            on_release: app.root.current = 'drill'
-        Button:
-            text: 'Histórico'
-            on_release: app.root.current = 'savedscore'
-        Button:
-            text:'Sair'
-            on_release: app.stop()
+        Image:
+            size_hint_y:.3
+            source:'img/pre-splash.png'
+            size:self.texture_size
+        AnchorLayout:
+            anchor_x:'center'
+            Button:
+                size_hint:.7,.7
+                background_normal:'img/buttons/start.png'
+                background_down:'img/buttons/start_press.png'
+                border: 0,0,0,0
+                on_release: 
+                    app.root.current = 'drill'
+                    root.manager.transition.direction = "left"
+        GridLayout:
+            orientation:'horizontal'
+            cols:2
+            padding:'30dp','30dp'
+            spacing:'70dp'
+            Button:
+                size_hint_y:None
+                pos_hint:{'x':.1,'y':.1}
+                background_normal:'img/buttons/quit.png'
+                background_down:'img/buttons/quit_press.png'
+                border: 0,0,0,0
+                on_release: app.stop()
+            Button:
+                size_hint_y: None
+                pos_hint:{'x':.7,'y':.1}
+                background_normal:'img/buttons/history.png'
+                background_down:'img/buttons/history_press.png'
+                border: 0,0,0,0
+                on_release: 
+                    app.root.current = 'savedscore'
+                    root.manager.transition.direction = "left"
             
 <Drill>:
     BoxLayout:
@@ -41,45 +71,71 @@
         ActionBar:
             ActionView:
                 ActionPrevious:
-                    title:'Retonar'
+                    title:'Sessão'
+                    app_icon:''
+                    previous_image_width:'30dp'   
                     on_release: 
                         app.root.current = 'menu'
                         root.manager.transition.direction = "right"
                         root.session.reset_status()
                 ActionButton:
                     text:'Finalizar sessão'
+                    icon:'img/buttons/save.png'
                     on_release: 
                         root.finish_session()
+                        root.manager.transition.direction = "left"
                         app.root.current = 'menu'
-
-        Label:
-            id: status
-            text: '0/0'
-            font_size: 30
-
+        # Placar 
+        BoxLayout:
+            size_hint_x: .8
+            padding:30,0,0,0
+            pos_hint:{'x':.1,'y':.6}
+            canvas.before:
+                Color: 
+                    rgba:1,1,1,1
+                Rectangle:
+                    pos:self.pos
+                    size:self.width, self.height - dp(30)
+                    source:'img/scoreboard.png'
+            Label:
+                id: points
+                font_name:'font/CursedTimerUlil-Aznm.ttf'
+                markup:True
+                size_hint_x:.6
+                pos_hint:{'y':-.1}
+                font_size: '20sp'
+                color:1,0,0,1
+            Label:
+                id: percentage
+                font_name:'font/CursedTimerUlil-Aznm.ttf'
+                pos_hint:{'y':-.1}
+                font_size: '20sp'
+                color:1,1,0,1
+        # Bolas com o histórico
         GridLayout:
             id: boxBall
             cols: 10
-            height: 32
-            size_hint_x: .5
-            pos_hint: {'x':.25}
-            spacing: '5dp'
-
+            height: '10dp'
+            size_hint: .7,.7
+            pos_hint: {'x':.15}
+            spacing: '3dp'
+        # Botões de ação
         BoxLayout:
             spacing: '50dp'
+            size_hint_y: 1.5
             padding: [10,10]
             Button:
                 border:0,0,0,0
                 id: f_splash
-                background_down:'img/splash_press.png'
-                background_normal: 'img/splash.png'
-                on_release: root.shot_splash(status)
+                background_normal: 'img/buttons/splash.png'
+                background_down:'img/buttons/splash_press.png'
+                on_release: root.shot_splash()
             Button:
                 id: f_wrong
                 border:0,0,0,0
-                background_down:'img/wrong_press.png'
-                background_normal: 'img/wrong.png'
-                on_release: root.shot_wrong(status)
+                background_normal: 'img/buttons/wrong.png'
+                background_down:'img/buttons/wrong_press.png'
+                on_release: root.shot_wrong()
 
 <SavedScore>:
     BoxLayout:
@@ -93,38 +149,28 @@
                 source:'img/background.jpg'
         ActionBar:
             ActionView:
+                background_color:0,0
                 ActionPrevious:
-                    title:'Retonar'
-                    on_release: app.root.current = 'menu'
-        GridLayout:
-            size_hint_y: None
-            height: 100
-            cols: 4
-            canvas:
-                Color: 
-                    rgba:.3,.3,.3,.7
-                Rectangle:
-                    pos:self.pos
-                    size:self.size
-            Label:
-                text: 'Aproveitamento'
-            Label:
-                text: 'Acertos'
-            Label:
-                text: 'Melhor sequência'
-            Label:
-                text: 'Data'
+                    title:'Histórico'
+                    app_icon: ''
+                    previous_image_width:'30dp'   
+                    on_release: 
+                        app.root.current = 'menu'
+                        root.manager.transition.direction = "right"
         ScrollView:
             BoxLayout:
                 id: box
                 orientation:'vertical'
                 size_hint_y: None
+                padding: '5dp'
+                spacing: '5dp'
                 height: self.minimum_height
                 
 
 <SessionScore>:
     id: boxSessions
     size_hint_y: None
+    height: '100dp'
     canvas:
         Color: 
             rgba:.4,.4,.4,.7
@@ -133,9 +179,41 @@
             size:self.size
     Label:
         id:accuracy
-    Label:
-        id:splash
-    Label:
-        id:best_sequence
-    Label:
-        id:date
+        font_size:'20sp'
+    BoxLayout:
+        orientation:'vertical'
+        Label:
+            id:result
+            font_size:'20sp'
+        Label:
+            text:'Sequências'
+            size_hint_y:.7
+            font_size:'11sp'
+        BoxLayout:
+            orientation:'horizontal'
+            Label:
+                id:best_sequence
+                canvas.before:
+                    Color:
+                        rgba: 1,1,1,1
+                    Rectangle:
+                        source:'img/hot.png'
+                        size: self.width/5, self.height/2
+                        pos: self.center_x+ sp(10), self.center_y - sp(7)
+                size_hint_x:.7
+                font_size:'15sp'
+            Label:
+                id:worst_sequence
+                size_hint_x:.7
+                font_size:'15sp'
+                canvas.before:
+                    Color:
+                        rgba: 1,1,1,1
+                    Rectangle:
+                        source:'img/cold.png'
+                        size: self.width/5, self.height/2
+                        pos: self.center_x+ sp(10), self.center_y - sp(7)
+        Label:
+            id:date
+            size_hint_x:1
+            font_size:'10sp'
