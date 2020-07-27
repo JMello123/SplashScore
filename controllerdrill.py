@@ -1,3 +1,4 @@
+import math
 
 class ControllerDrill():
     def __init__(self,**kwargs):
@@ -19,7 +20,6 @@ class ControllerDrill():
         self.status['sequence'][1] = 0
         self._check_sequence()
         last_points = self._update_last_ten(is_point=True)
-        # text = str(self.status['point'])+ '/' +str(self.status['attempt']) + ' -> ' + str(round(self.status['accuracy']*100,1))+ '%'
         return self.status, last_points
 
     def increment_error(self, *args):
@@ -29,7 +29,6 @@ class ControllerDrill():
         self.status['sequence'][1] += 1
         self._check_sequence()
         last_points = self._update_last_ten()
-        # text = str(self.status['point'])+ '/' +str(self.status['attempt']) + ' -> ' + str(round(self.status['accuracy']*100,1))+ '%'
         return self.status, last_points
         
     def _check_sequence(self):
@@ -65,3 +64,4 @@ class ControllerDrill():
         self.status['sequence'] = [0,0]
         self.status['worst_sequence'] = 0
         self.status['last_ten'] = [0,0,0,0,0,0,0,0,0,0]
+

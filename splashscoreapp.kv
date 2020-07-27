@@ -1,14 +1,14 @@
 <Manager>:
     Menu:
         name:'menu'
+    # Settings:
+    #     name:'settings'
     Drill:
         name:'drill'
     SavedScore:
         name:'savedscore'
     SavedDetails:
         name:'saved_details'
-    Settings:
-        name:'settings'
 
 
 <Menu>:
@@ -74,10 +74,7 @@
                     title:'Sessão'
                     app_icon:''
                     previous_image_width:'30dp'   
-                    on_release: 
-                        app.root.current = 'menu'
-                        root.manager.transition.direction = "right"
-                        root.session.reset_status()
+                    on_release: root.exit_confirm()
                 ActionButton:
                     text:'Finalizar sessão'
                     icon:'img/buttons/save.png'
@@ -157,6 +154,12 @@
                     on_release: 
                         app.root.current = 'menu'
                         root.manager.transition.direction = "right"
+                ActionButton:
+                    text:'Detalhes'
+                    # icon:'img/buttons/save.png'
+                    on_release: 
+                        root.manager.transition.direction = "left"
+                        app.root.current = 'saved_details'
         ScrollView:
             BoxLayout:
                 id: box
@@ -217,3 +220,64 @@
             id:date
             size_hint_x:1
             font_size:'10sp'
+
+<SavedDetails>:
+    BoxLayout:
+        id: details
+        orientation:'vertical'
+        canvas:
+            Color: 
+                rgba:1,1,1,1
+            Rectangle:
+                pos:self.pos
+                size:self.size
+                source:'img/background.jpg'
+        ActionBar:
+            ActionView:
+                background_color:0,1
+                ActionPrevious:
+                    title:'Detalhes'
+                    app_icon: ''
+                    previous_image_width:'30dp'   
+                    on_release: 
+                        app.root.current = 'savedscore'
+                        root.manager.transition.direction = "right"
+        Label:
+            text:'Aqui vai um gráfico'
+        BoxLayout:
+            orientation:'vertical'
+            padding: '5dp'
+            spacing: '5dp'
+            LabelDetails:
+                id:averageAccuracy
+            LabelDetails:
+                id:totalPoints
+            LabelDetails:
+                id:totalAttempts
+            LabelDetails:
+                id:bestAccuracy
+            LabelDetails:
+                id:bestSequenceAllofTime
+
+<LabelDetails@Label>:
+    canvas.before:
+        Color: 
+            rgba:.4,.4,.4,.7
+        Rectangle:
+            pos:self.pos
+            size:self.size
+
+<PopupReturn>:
+    title:'Deseja sair? Todo seu progresso será perdido'
+    size_hint:.7,.3
+    BoxLayout:
+        id:popup
+        Button:
+            text:'Sim'
+            on_release: 
+                app.root.current = 'menu'
+                app.root.transition.direction = "right"
+                root.dismiss()
+        Button:
+            text:'Não'
+            on_release: root.dismiss()
