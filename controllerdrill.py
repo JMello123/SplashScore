@@ -9,7 +9,7 @@ class ControllerDrill():
             'sequence':[0,0],
             'best_sequence':0,
             'worst_sequence':0,
-            'last_ten': [0,0,0,0,0,0,0,0,0,0]
+            'last_shots': [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         }
 
     def increment_point(self,*args):
@@ -19,7 +19,7 @@ class ControllerDrill():
         self.status['sequence'][0] += 1
         self.status['sequence'][1] = 0
         self._check_sequence()
-        last_points = self._update_last_ten(is_point=True)
+        last_points = self._update_last_shots(is_point=True)
         return self.status, last_points
 
     def increment_error(self, *args):
@@ -28,7 +28,7 @@ class ControllerDrill():
         self.status['sequence'][0] = 0
         self.status['sequence'][1] += 1
         self._check_sequence()
-        last_points = self._update_last_ten()
+        last_points = self._update_last_shots()
         return self.status, last_points
         
     def _check_sequence(self):
@@ -40,7 +40,7 @@ class ControllerDrill():
         if self.status['sequence'][1] > self.status['worst_sequence']:
             self.status['worst_sequence'] = self.status['sequence'][1]
 
-    def _update_last_ten(self, is_point:bool = False):
+    def _update_last_shots(self, is_point:bool = False):
         '''
         is_point: True if point is incremented
         return: list
@@ -48,13 +48,13 @@ class ControllerDrill():
         1: for splash
         2: for wrong
         '''
-        self.status['last_ten'].pop(0)
+        self.status['last_shots'].pop(0)
         if is_point:
-            self.status['last_ten'].append(1)
-            return self.status['last_ten']
+            self.status['last_shots'].append(1)
+            return self.status['last_shots']
         if not is_point:
-            self.status['last_ten'].append(2)
-            return self.status['last_ten']
+            self.status['last_shots'].append(2)
+            return self.status['last_shots']
 
     def reset_status(self):
         self.status['point'] = 0
@@ -63,5 +63,5 @@ class ControllerDrill():
         self.status['best_sequence'] = 0
         self.status['sequence'] = [0,0]
         self.status['worst_sequence'] = 0
-        self.status['last_ten'] = [0,0,0,0,0,0,0,0,0,0]
+        self.status['last_shots'] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 

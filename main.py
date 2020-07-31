@@ -2,16 +2,20 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.image import Image
 from kivy.uix.button import Button
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, ListProperty
 from kivy.config import Config
 from kivy.metrics import dp
 from kivy.lang.builder import Builder
 from kivy.uix.popup import Popup
+from kivy.cache import Cache
+from kivy_garden.graph import Graph, MeshLinePlot
 
 import json
 import time
+from math import sin
 
 from controllerdrill import ControllerDrill
 
@@ -57,6 +61,8 @@ class Drill(Screen):
     splash = NumericProperty(0)
     wrong = NumericProperty(0)
     percentage = NumericProperty(.0)
+    ball_render_pos_min = NumericProperty(5)
+    Cache.register('shots_to_rollback', limit=5)
 
     def __init__(self,**kwargs):
         self.session = ControllerDrill()
@@ -65,7 +71,7 @@ class Drill(Screen):
     def on_pre_enter(self):
         Window.bind(on_keyboard=App.get_running_app().root.back_menu)
         self.session.reset_status()
-        self.draw_balls(self.session.status['last_ten'])
+        self.draw_balls(self.session.status['last_shots'],self.ball_render_pos_min)
         self.ids.points.text = '[size=33]0[/size]/0'
         self.ids.percentage.text = '0%'
 
@@ -74,31 +80,46 @@ class Drill(Screen):
         
     def on_splash(self,*args):
         self.ids.points.text = f"[size=33]{self.session.status['point']}[/size]"+'/'+str(self.session.status['attempt'])
-        self.ids.percentage.text = str(round(self.session.status['accuracy']*100,1))+'%'
+        self.ids.percentage.text = str(round(self.session.status['accuracy']*100,1))+'%' 
 
     def on_wrong(self,*args):
         self.ids.points.text = f"[size=33]{self.session.status['point']}[/size]"+'/'+str(self.session.status['attempt'])
         self.ids.percentage.text = str(round(self.session.status['accuracy']*100,1))+'%'
 
-    def draw_balls(self, balls:list):
+    def draw_balls(self, balls:list, ball_render_pos_min=5):
         self.ids.boxBall.clear_widgets()
-        for ball in balls:
+        for ball in balls[ball_render_pos_min : ball_render_pos_min+10]:
             if ball == 0:
                 self.ids.boxBall.add_widget(Image(source='img/grey_ball.png'))
             if ball == 1:
                 self.ids.boxBall.add_widget(Image(source='img/green_ball.png'))
             if ball == 2:
                 self.ids.boxBall.add_widget(Image(source='img/red_ball.png'))
+
+    def on_ball_render_pos_min(self,*args):
+        if self.ball_render_pos_min < 0:
+            self.ids.return_last_shot.disabled = True
+        else:
+            self.ids.return_last_shot.disabled = False
+            self.draw_balls(self.session.status['last_shots'],self.ball_render_pos_min)
     
     def shot_splash(self):
         points, self.last_shots = self.session.increment_point()
-        self.draw_balls(self.last_shots)
+        Cache.append('shots_to_rollback',f'status{self.ball_render_pos_min}',self.session.status)
+        Cache.print_usage()
+        if self.ball_render_pos_min < 5:
+            self.ball_render_pos_min += 1
+        else:
+            self.draw_balls(self.last_shots)
         self.splash = points['point']
         self.percentage = points['accuracy']
 
     def shot_wrong(self):
         points, self.last_shots = self.session.increment_error()
-        self.draw_balls(self.last_shots)
+        if self.ball_render_pos_min < 5:
+            self.ball_render_pos_min += 1
+        else:
+            self.draw_balls(self.last_shots)
         self.wrong = points['attempt']
         self.percentage = points['accuracy']
 
@@ -116,6 +137,7 @@ class Drill(Screen):
                 'best_sequence':self.session.status['best_sequence'],
                 'worst_sequence':self.session.status['worst_sequence'],
                 'date':saved_date})
+
 
 class PopupReturn(Popup):
     pass
@@ -151,6 +173,7 @@ class SavedDetails(Screen):
     
     def on_pre_enter(self):
         self.handling_score()
+        self.ids.graph.draw_graph()
 
     def on_pre_leave(self):
         Window.unbind(on_keyboard=App.get_running_app().root.back_menu)
@@ -186,6 +209,46 @@ class SavedDetails(Screen):
         self.ids.bestAccuracy.text += str(round(best_accuracy*100,1))+'%'
         self.ids.bestSequenceAllofTime.text += str(best_sequence)
 
+
+class Grafico(Graph):
+
+    X_TICKS_DEFAULT = 10 # Number of ticks to be displayed without activate scrollView
+    RATIO_OF_TEN_TICKS = 0.08 # Ratio of ticks in relation to the width of the screen
+   
+    def __init__(self,**kwargs):
+        super(Grafico, self).__init__(**kwargs)
+        self.xlabel='Dias de treinamento' 
+        self.ylabel='Aproveitamento(%)' 
+        self.x_ticks_minor=1
+        self.x_ticks_major=1
+        self.size_hint_x = None
+        self.y_ticks_major=10
+        self.y_grid_label=True 
+        self.x_grid_label=True 
+        self.padding=5
+        self.x_grid=True 
+        self.y_grid=True 
+        self.xmin=0
+        self.ymin=0
+        self.ymax=100
+        self.background_color = .5,.5,.5,.5
+        
+    def draw_graph(self):
+        sessions = App.get_running_app().root.loadDrill()
+        screen_width = self.get_root_window().width
+        self.xmax = len(sessions) #numero de sessoes feitas
+        if self.xmax <= self.X_TICKS_DEFAULT:
+            self.width = screen_width
+        if self.xmax > self.X_TICKS_DEFAULT:
+            self.width = (screen_width)+((self.xmax - self.X_TICKS_DEFAULT)*(screen_width * self.RATIO_OF_TEN_TICKS))
+
+        plot = MeshLinePlot(color=[1, 1, 0, 1])
+        self.remove_plot(plot)
+        points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
+        print(points)
+        plot.points = points
+        self.add_plot(plot)
+    
 
 class Settings(Screen):
     pass

@@ -109,13 +109,24 @@
                 font_size: '20sp'
                 color:1,1,0,1
         # Bolas com o histórico
-        GridLayout:
-            id: boxBall
-            cols: 10
-            height: '10dp'
-            size_hint: .7,.7
-            pos_hint: {'x':.15}
-            spacing: '3dp'
+        BoxLayout:
+            orientation:'vertical'
+            Button:
+                id: return_last_shot
+                pos_hint: {'x':.4,'y':.3}
+                size_hint:.1,.3
+                text:'<-'
+                on_release: 
+                    # root.ball_render_pos_min -= 1
+                    print(root.ball_render_pos_min)
+            GridLayout:
+                id: boxBall
+                cols: 10
+                height: '10dp'
+                size_hint: .7,.7
+                pos_hint: {'x':.15}
+                spacing: '3dp'
+                # padding: '3dp'
         # Botões de ação
         BoxLayout:
             spacing: '50dp'
@@ -126,13 +137,17 @@
                 id: f_splash
                 background_normal: 'img/buttons/splash.png'
                 background_down:'img/buttons/splash_press.png'
-                on_release: root.shot_splash()
+                on_release: 
+                    root.shot_splash()
+                    print(root.ball_render_pos_min)
             Button:
                 id: f_wrong
                 border:0,0,0,0
                 background_normal: 'img/buttons/wrong.png'
                 background_down:'img/buttons/wrong_press.png'
-                on_release: root.shot_wrong()
+                on_release: 
+                    root.shot_wrong()
+                    print(root.ball_render_pos_min)
 
 <SavedScore>:
     BoxLayout:
@@ -156,7 +171,7 @@
                         root.manager.transition.direction = "right"
                 ActionButton:
                     text:'Detalhes'
-                    # icon:'img/buttons/save.png'
+                    icon:'img/buttons/graph.png'
                     on_release: 
                         root.manager.transition.direction = "left"
                         app.root.current = 'saved_details'
@@ -242,8 +257,13 @@
                     on_release: 
                         app.root.current = 'savedscore'
                         root.manager.transition.direction = "right"
-        Label:
-            text:'Aqui vai um gráfico'
+        ScrollView:
+            size_hint_x: None
+            width: root.width
+            Grafico: 
+                id: graph
+                # width: root.width * ((10)*.08)
+        
         BoxLayout:
             orientation:'vertical'
             padding: '5dp'
