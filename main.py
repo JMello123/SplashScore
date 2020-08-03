@@ -11,7 +11,7 @@ from kivy.metrics import dp
 from kivy.lang.builder import Builder
 from kivy.uix.popup import Popup
 from kivy.cache import Cache
-from kivy_garden.graph import Graph, MeshLinePlot
+from kivy_garden.graph import Graph, MeshLinePlot, PointPlot
 from kivy.clock import Clock
 
 import json
@@ -41,6 +41,12 @@ class Manager(ScreenManager):
         self.data = self.loadDrill()
         path = App.get_running_app().user_data_dir+'/'
         self.data.append(savedata)
+        with open(path + 'saved_score.json', 'w') as saved_score:
+            json.dump(self.data, saved_score)
+
+    def reset_data(self):
+        self.data=[]
+        path = App.get_running_app().user_data_dir+'/'
         with open(path + 'saved_score.json', 'w') as saved_score:
             json.dump(self.data, saved_score)
 
@@ -173,6 +179,9 @@ class Drill(Screen):
 class PopupReturn(Popup):
     pass
 
+class PopupReset(Popup):
+    pass
+
 
 class SavedScore(Screen):
 
@@ -232,7 +241,7 @@ class SavedDetails(Screen):
                 best_sequence = session['best_sequence']
             if session['accuracy'] > best_accuracy:
                 best_accuracy = session['accuracy']
-        average = total_percentage/len(sessions)
+        average = total_percentage/ 1 if len(sessions)== 0 else len(sessions)
 
         self.ids.averageAccuracy.text += str(round(average*100, 1))+'%'
         self.ids.totalPoints.text += str(total_points)
@@ -248,7 +257,7 @@ class GraphHistoric(Graph):
    
     def __init__(self,**kwargs):
         super(GraphHistoric, self).__init__(**kwargs)
-        self.xlabel='Dias de treinamento' 
+        self.xlabel='Treinos feitos' 
         self.ylabel='Aproveitamento(%)' 
         self.x_ticks_minor=1
         self.x_ticks_major=1
@@ -267,22 +276,36 @@ class GraphHistoric(Graph):
     def draw_graph(self):
         sessions = App.get_running_app().root.loadDrill()
         screen_width = self.get_root_window().width
-        self.xmax = len(sessions) #numero de sessoes feitas
+        self.xmax = 1 if len(sessions)== 0 else len(sessions) #numero de sessoes feitas
         if self.xmax <= self.X_TICKS_DEFAULT:
             self.width = screen_width
         if self.xmax > self.X_TICKS_DEFAULT:
             self.width = (screen_width)+((self.xmax - self.X_TICKS_DEFAULT)*(screen_width * self.RATIO_OF_TEN_TICKS))
 
         plot = MeshLinePlot(color=[1, 1, 0, 1])
+        plot_start = PointPlot(color=[.7, .7, 0, 1], point_size=5)
         self.remove_plot(plot)
-        points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
-        print(points)
-        plot.points = points
+        self.remove_plot(plot_start)
+        plot.points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
+        plot_start.points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
         self.add_plot(plot)
+        self.add_plot(plot_start)
     
 
 class Config(Screen):
-    pass
+    def on_pre_enter(self):
+        Window.bind(on_keyboard=App.get_running_app().root.back_menu)
+    
+    def on_pre_leave(self):
+        Window.unbind(on_keyboard=App.get_running_app().root.back_menu)
+
+    def reset_confirm(self, *args):
+        popup = PopupReset(auto_dismiss=False)
+        popup.open()
+
+    def del_all_saved_session(self):
+        App.get_running_app().root.reset_data()
+        
 
 
 class Splashscore(App):

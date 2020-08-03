@@ -240,6 +240,7 @@
         spacing: '50dp'
         StackLayout:
             orientation:'tb-lr'
+            # size_hint_y: 1.9
             ActionBar:
                 background_color: .4,.4,.4,.7
                 ActionView:
@@ -254,8 +255,10 @@
                 size_hint_y: None
                 height: '50sp'
                 text:'Deletar todas as sessões'
+                on_release: root.reset_confirm()
         Label:
             markup:True
+            size_hint_y:.2
             halign: 'center'
             text:"Created by: Juan Mello\nIcon made by Pixel perfect from www.flaticon.com"
             canvas.before:
@@ -326,6 +329,22 @@
             on_release: 
                 app.root.current = 'menu'
                 app.root.transition.direction = "right"
+                root.dismiss()
+        Button:
+            text:'Não'
+            on_release: root.dismiss()
+
+<PopupReset>:
+    title:'Deseja APAGAR todo seu histórico? Essa operação não pode ser desfeita'
+    size_hint:.7,.3
+    BoxLayout:
+        id:popup
+        padding: '5dp','20dp'
+        spacing: '5dp'
+        Button:
+            text:'Sim'
+            on_release: 
+                app.root.get_screen('config').del_all_saved_session()
                 root.dismiss()
         Button:
             text:'Não'
