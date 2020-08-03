@@ -12,6 +12,7 @@ from kivy.lang.builder import Builder
 from kivy.uix.popup import Popup
 from kivy.cache import Cache
 from kivy_garden.graph import Graph, MeshLinePlot
+from kivy.clock import Clock
 
 import json
 import time
@@ -59,10 +60,10 @@ class Menu(Screen):
 class Drill(Screen):
 
     splash = NumericProperty(0)
-    wrong = NumericProperty(0)
+    attempt = NumericProperty(0)
     percentage = NumericProperty(.0)
-    ball_render_pos_min = NumericProperty(5)
-    Cache.register('shots_to_rollback', limit=5)
+    pos_min_ball_render = NumericProperty(1)
+    last_shots = ListProperty()
 
     def __init__(self,**kwargs):
         self.session = ControllerDrill()
@@ -70,25 +71,31 @@ class Drill(Screen):
 
     def on_pre_enter(self):
         Window.bind(on_keyboard=App.get_running_app().root.back_menu)
-        self.session.reset_status()
-        self.draw_balls(self.session.status['last_shots'],self.ball_render_pos_min)
+        self.session.reset_drill()
+        self.last_shots = self.session.get_last_shots()
+        self.draw_balls(self.last_shots, self.pos_min_ball_render)
         self.ids.points.text = '[size=33]0[/size]/0'
         self.ids.percentage.text = '0%'
+        self.ids.return_last_shot.disabled = False
 
     def on_pre_leave(self):
         Window.unbind(on_keyboard=App.get_running_app().root.back_menu)
         
     def on_splash(self,*args):
-        self.ids.points.text = f"[size=33]{self.session.status['point']}[/size]"+'/'+str(self.session.status['attempt'])
-        self.ids.percentage.text = str(round(self.session.status['accuracy']*100,1))+'%' 
+        self.ids.points.text = f"[size=33]{self.splash}[/size]"+'/'+str(self.attempt)
+        self.ids.percentage.text = str(round(self.percentage*100,1))+'%' 
 
-    def on_wrong(self,*args):
-        self.ids.points.text = f"[size=33]{self.session.status['point']}[/size]"+'/'+str(self.session.status['attempt'])
-        self.ids.percentage.text = str(round(self.session.status['accuracy']*100,1))+'%'
+    def on_attempt(self,*args):
+        self.ids.points.text = f"[size=33]{self.splash}[/size]"+'/'+str(self.attempt)
+        self.ids.percentage.text = str(round(self.percentage*100,1))+'%'
+        
+    def on_percentage(self,*args):
+        self.ids.points.text = f"[size=33]{self.splash}[/size]"+'/'+str(self.attempt)
+        self.ids.percentage.text = str(round(self.percentage*100,1))+'%' 
 
-    def draw_balls(self, balls:list, ball_render_pos_min=5):
+    def draw_balls(self, balls:list, pos_min_ball_render=1):
         self.ids.boxBall.clear_widgets()
-        for ball in balls[ball_render_pos_min : ball_render_pos_min+10]:
+        for ball in balls[pos_min_ball_render : pos_min_ball_render+10]:
             if ball == 0:
                 self.ids.boxBall.add_widget(Image(source='img/grey_ball.png'))
             if ball == 1:
@@ -96,32 +103,55 @@ class Drill(Screen):
             if ball == 2:
                 self.ids.boxBall.add_widget(Image(source='img/red_ball.png'))
 
-    def on_ball_render_pos_min(self,*args):
-        if self.ball_render_pos_min < 0:
+    def on_pos_min_ball_render(self,*args):
+        if self.pos_min_ball_render <=0:
+            self.pos_min_ball_render = 0
             self.ids.return_last_shot.disabled = True
+            status = self.session.rollback_status()
+            self.last_shots = status['last_shots']
+            self.splash = status['point']
+            self.attempt = status['attempt']
+            self.percentage = status['accuracy']
+            self.on_splash()
+            self.draw_balls(self.last_shots, self.pos_min_ball_render)
         else:
             self.ids.return_last_shot.disabled = False
-            self.draw_balls(self.session.status['last_shots'],self.ball_render_pos_min)
+            self.last_shots = self.session.get_last_shots()
+            self.draw_balls(self.last_shots, self.pos_min_ball_render)
     
     def shot_splash(self):
-        points, self.last_shots = self.session.increment_point()
-        Cache.append('shots_to_rollback',f'status{self.ball_render_pos_min}',self.session.status)
-        Cache.print_usage()
-        if self.ball_render_pos_min < 5:
-            self.ball_render_pos_min += 1
+        if self.pos_min_ball_render < 1:# executado ao pressionar o botão depois de rollback 
+            status_rollback = self.session.increment_point(self.pos_min_ball_render, True)
+            self.draw_balls(status_rollback['last_shots'],self.pos_min_ball_render)
+            self.pos_min_ball_render += 1 # retorna a posição para renderização das bolas ao estado normal
+            self.splash = status_rollback['point']
+            self.attempt = status_rollback['attempt']
+            self.percentage = status_rollback['accuracy']
+            # print('pos_min aumentado', self.pos_min_ball_render)
         else:
-            self.draw_balls(self.last_shots)
-        self.splash = points['point']
-        self.percentage = points['accuracy']
+            status = self.session.increment_point()
+            self.draw_balls(status['last_shots'], self.pos_min_ball_render)
+            self.splash = status['point']
+            self.attempt = status['attempt']
+            self.percentage = status['accuracy']
+        print(self.last_shots)
 
     def shot_wrong(self):
-        points, self.last_shots = self.session.increment_error()
-        if self.ball_render_pos_min < 5:
-            self.ball_render_pos_min += 1
+        if self.pos_min_ball_render < 1:
+            status_rollback = self.session.increment_error(self.pos_min_ball_render, True)
+            self.draw_balls(status_rollback['last_shots'],self.pos_min_ball_render)
+            self.pos_min_ball_render += 1
+            self.splash = status_rollback['point']
+            self.attempt = status_rollback['attempt']
+            self.percentage = status_rollback['accuracy']
+            # print('pos_min aumentado', self.pos_min_ball_render)
         else:
-            self.draw_balls(self.last_shots)
-        self.wrong = points['attempt']
-        self.percentage = points['accuracy']
+            status = self.session.increment_error()
+            self.draw_balls(status['last_shots'],self.pos_min_ball_render)
+            self.splash = status['point']
+            self.attempt = status['attempt']
+            self.percentage = status['accuracy']
+        print(self.last_shots)
 
     def exit_confirm(self, *args):
         popup = PopupReturn(auto_dismiss=False)
@@ -130,12 +160,13 @@ class Drill(Screen):
     def finish_session(self, *args):
         date = time.localtime()
         saved_date = f'{date.tm_mday}/{date.tm_mon}/{date.tm_year} {date.tm_hour}:{date.tm_min}'
+        final_status = self.session.status
         App.get_running_app().root.saveDrill(
-            {'accuracy':self.session.status['accuracy'], 
-                'points':self.session.status['point'], 
-                'attempt':self.session.status['attempt'], 
-                'best_sequence':self.session.status['best_sequence'],
-                'worst_sequence':self.session.status['worst_sequence'],
+            {'accuracy':final_status['accuracy'], 
+                'points':final_status['point'], 
+                'attempt':final_status['attempt'], 
+                'best_sequence':final_status['best_sequence'],
+                'worst_sequence':final_status['worst_sequence'],
                 'date':saved_date})
 
 
@@ -173,7 +204,7 @@ class SavedDetails(Screen):
     
     def on_pre_enter(self):
         self.handling_score()
-        self.ids.graph.draw_graph()
+        self.ids.graph_historic.draw_graph()
 
     def on_pre_leave(self):
         Window.unbind(on_keyboard=App.get_running_app().root.back_menu)
@@ -210,13 +241,13 @@ class SavedDetails(Screen):
         self.ids.bestSequenceAllofTime.text += str(best_sequence)
 
 
-class Grafico(Graph):
+class GraphHistoric(Graph):
 
     X_TICKS_DEFAULT = 10 # Number of ticks to be displayed without activate scrollView
     RATIO_OF_TEN_TICKS = 0.08 # Ratio of ticks in relation to the width of the screen
    
     def __init__(self,**kwargs):
-        super(Grafico, self).__init__(**kwargs)
+        super(GraphHistoric, self).__init__(**kwargs)
         self.xlabel='Dias de treinamento' 
         self.ylabel='Aproveitamento(%)' 
         self.x_ticks_minor=1
@@ -250,7 +281,7 @@ class Grafico(Graph):
         self.add_plot(plot)
     
 
-class Settings(Screen):
+class Config(Screen):
     pass
 
 

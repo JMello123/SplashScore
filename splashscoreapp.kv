@@ -1,8 +1,8 @@
 <Manager>:
     Menu:
         name:'menu'
-    # Settings:
-    #     name:'settings'
+    Config:
+        name:'config'
     Drill:
         name:'drill'
     SavedScore:
@@ -10,18 +10,20 @@
     SavedDetails:
         name:'saved_details'
 
+<BoxBackground@BoxLayout>:
+    orientation: 'vertical'
+    canvas:
+        Color: 
+            rgba:1,1,1,1
+        Rectangle:
+            pos:self.pos
+            size:self.size
+            source:'img/background.jpg'
+
 
 <Menu>:
-    BoxLayout:
-        orientation:'vertical'
-        padding: '50dp',0
-        canvas:
-            Color: 
-                rgba:1,1,1,1
-            Rectangle:
-                pos:self.pos
-                size:self.size
-                source:'img/background.jpg'
+    BoxBackground:
+        padding: '30dp',0
         Image:
             size_hint_y:.3
             source:'img/pre-splash.png'
@@ -38,9 +40,9 @@
                     root.manager.transition.direction = "left"
         GridLayout:
             orientation:'horizontal'
-            cols:2
-            padding:'30dp','30dp'
-            spacing:'70dp'
+            cols:3
+            padding:'0dp','30dp'
+            spacing:'10dp'
             Button:
                 size_hint_y:None
                 pos_hint:{'x':.1,'y':.1}
@@ -48,6 +50,13 @@
                 background_down:'img/buttons/quit_press.png'
                 border: 0,0,0,0
                 on_release: app.stop()
+            Button:
+                size_hint_y:None
+                background_normal:'img/buttons/settings.png'
+                background_down:'img/buttons/settings_press.png'
+                border: 0,0,0,0
+                on_release: app.root.current = 'config'
+            
             Button:
                 size_hint_y: None
                 pos_hint:{'x':.7,'y':.1}
@@ -59,16 +68,9 @@
                     root.manager.transition.direction = "left"
             
 <Drill>:
-    BoxLayout:
-        orientation: 'vertical'
-        canvas:
-            Color: 
-                rgba:1,1,1,1
-            Rectangle:
-                pos:self.pos
-                size:self.size
-                source:'img/background.jpg'
+    BoxBackground:
         ActionBar:
+            background_color: .4,.4,.4,.7
             ActionView:
                 ActionPrevious:
                     title:'Sessão'
@@ -111,14 +113,18 @@
         # Bolas com o histórico
         BoxLayout:
             orientation:'vertical'
+            padding: '10dp'
             Button:
                 id: return_last_shot
-                pos_hint: {'x':.4,'y':.3}
+                pos_hint: {'x':.45,'y':.3}
                 size_hint:.1,.3
-                text:'<-'
+                border:0,0,0,0
+                background_normal: 'img/buttons/rollback.png'
+                background_down:'img/buttons/rollback_press.png'
                 on_release: 
-                    # root.ball_render_pos_min -= 1
-                    print(root.ball_render_pos_min)
+                    root.pos_min_ball_render -= 1
+                    print('pos_min ao voltar;',root.pos_min_ball_render)
+                    print(root.last_shots)
             GridLayout:
                 id: boxBall
                 cols: 10
@@ -138,28 +144,21 @@
                 background_normal: 'img/buttons/splash.png'
                 background_down:'img/buttons/splash_press.png'
                 on_release: 
+                    print('pos_min ao clicar;', root.pos_min_ball_render)
                     root.shot_splash()
-                    print(root.ball_render_pos_min)
             Button:
                 id: f_wrong
                 border:0,0,0,0
                 background_normal: 'img/buttons/wrong.png'
                 background_down:'img/buttons/wrong_press.png'
                 on_release: 
+                    print('pos_min ao clicar;', root.pos_min_ball_render)
                     root.shot_wrong()
-                    print(root.ball_render_pos_min)
 
 <SavedScore>:
-    BoxLayout:
-        orientation: 'vertical'
-        canvas:
-            Color: 
-                rgba:1,1,1,1
-            Rectangle:
-                pos:self.pos
-                size:self.size
-                source:'img/background.jpg'
+    BoxBackground:
         ActionBar:
+            background_color: .4,.4,.4,.7
             ActionView:
                 background_color:0,0
                 ActionPrevious:
@@ -236,10 +235,39 @@
             size_hint_x:1
             font_size:'10sp'
 
+<Config>:
+    BoxBackground:
+        spacing: '50dp'
+        StackLayout:
+            orientation:'tb-lr'
+            ActionBar:
+                background_color: .4,.4,.4,.7
+                ActionView:
+                    ActionPrevious:
+                        title:'Configurações'
+                        app_icon: ''
+                        previous_image_width:'30dp'   
+                        on_release: 
+                            app.root.current = 'menu'
+                            root.manager.transition.direction = "right"
+            Button:
+                size_hint_y: None
+                height: '50sp'
+                text:'Deletar todas as sessões'
+        Label:
+            markup:True
+            halign: 'center'
+            text:"Created by: Juan Mello\nIcon made by Pixel perfect from www.flaticon.com"
+            canvas.before:
+                Color:
+                    rgba:.4,.4,.4,.7
+                RoundedRectangle:
+                    pos: self.pos
+                    size:self.size
+                    radius: 18,18,18,18                    
+
 <SavedDetails>:
-    BoxLayout:
-        id: details
-        orientation:'vertical'
+    BoxBackground:
         canvas:
             Color: 
                 rgba:1,1,1,1
@@ -248,6 +276,7 @@
                 size:self.size
                 source:'img/background.jpg'
         ActionBar:
+            background_color: .4,.4,.4,.7
             ActionView:
                 background_color:0,1
                 ActionPrevious:
@@ -260,10 +289,8 @@
         ScrollView:
             size_hint_x: None
             width: root.width
-            Grafico: 
-                id: graph
-                # width: root.width * ((10)*.08)
-        
+            GraphHistoric: 
+                id: graph_historic
         BoxLayout:
             orientation:'vertical'
             padding: '5dp'
@@ -288,10 +315,12 @@
             size:self.size
 
 <PopupReturn>:
-    title:'Deseja sair? Todo seu progresso será perdido'
+    title:'Deseja sair? Todo seu progresso será PERDIDO'
     size_hint:.7,.3
     BoxLayout:
         id:popup
+        padding: '5dp','20dp'
+        spacing: '5dp'
         Button:
             text:'Sim'
             on_release: 
