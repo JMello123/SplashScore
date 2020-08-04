@@ -4,6 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.image import Image
+from kivy.core.text import LabelBase
 from kivy.uix.button import Button
 from kivy.properties import NumericProperty, ListProperty
 from kivy.config import Config
@@ -140,7 +141,7 @@ class Drill(Screen):
             self.splash = status['point']
             self.attempt = status['attempt']
             self.percentage = status['accuracy']
-        print(self.last_shots)
+        # print(self.last_shots)
 
     def shot_wrong(self):
         if self.pos_min_ball_render < 1:
@@ -318,6 +319,8 @@ class Splashscore(App):
         # importando e lendo manualmente o arquivo .kv para forçar a codificação utf-8 
         # e corrigir problemas de caracteres incompatíveis  
         Builder.load_string(open("splashscoreapp.kv", encoding="utf-8").read(), rulesonly=True)
+        #registra nova fonte personalizada 
+        LabelBase.register(name='CursedTimer',fn_regular='font/CursedTimerUlil-Aznm.ttf')
         return Manager()
 
     

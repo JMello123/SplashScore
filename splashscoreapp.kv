@@ -98,7 +98,7 @@
                     source:'img/scoreboard.png'
             Label:
                 id: points
-                font_name:'font/CursedTimerUlil-Aznm.ttf'
+                font_name:'CursedTimer'
                 markup:True
                 size_hint_x:.6
                 pos_hint:{'y':-.1}
@@ -106,7 +106,7 @@
                 color:1,0,0,1
             Label:
                 id: percentage
-                font_name:'font/CursedTimerUlil-Aznm.ttf'
+                font_name:'CursedTimer'
                 pos_hint:{'y':-.1}
                 font_size: '20sp'
                 color:1,1,0,1
@@ -144,7 +144,6 @@
                 background_normal: 'img/buttons/splash.png'
                 background_down:'img/buttons/splash_press.png'
                 on_release: 
-                    print('pos_min ao clicar;', root.pos_min_ball_render)
                     root.shot_splash()
             Button:
                 id: f_wrong
@@ -152,7 +151,6 @@
                 background_normal: 'img/buttons/wrong.png'
                 background_down:'img/buttons/wrong_press.png'
                 on_release: 
-                    print('pos_min ao clicar;', root.pos_min_ball_render)
                     root.shot_wrong()
 
 <SavedScore>:
