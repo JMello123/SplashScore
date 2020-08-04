@@ -237,12 +237,13 @@ class SavedDetails(Screen):
             total_points += session['points']
             total_attempts += session['attempt']
             total_percentage += session['accuracy']
+
             if session['best_sequence'] > best_sequence:
                 best_sequence = session['best_sequence']
             if session['accuracy'] > best_accuracy:
                 best_accuracy = session['accuracy']
-        average = total_percentage/ 1 if len(sessions)== 0 else len(sessions)
 
+        average = total_percentage/( 1 if len(sessions)== 0 else len(sessions))
         self.ids.averageAccuracy.text += str(round(average*100, 1))+'%'
         self.ids.totalPoints.text += str(total_points)
         self.ids.totalAttempts.text += str(total_attempts)
@@ -254,7 +255,7 @@ class GraphHistoric(Graph):
 
     X_TICKS_DEFAULT = 10 # Number of ticks to be displayed without activate scrollView
     RATIO_OF_TEN_TICKS = 0.08 # Ratio of ticks in relation to the width of the screen
-   
+
     def __init__(self,**kwargs):
         super(GraphHistoric, self).__init__(**kwargs)
         self.xlabel='Treinos feitos' 
@@ -271,7 +272,8 @@ class GraphHistoric(Graph):
         self.xmin=0
         self.ymin=0
         self.ymax=100
-        self.background_color = .5,.5,.5,.5
+        self.background_color = .5,.5,.5,.5,
+        # self.label_options = {'text':'asd'}
         
     def draw_graph(self):
         sessions = App.get_running_app().root.loadDrill()
@@ -284,10 +286,13 @@ class GraphHistoric(Graph):
 
         plot = MeshLinePlot(color=[1, 1, 0, 1])
         plot_start = PointPlot(color=[.7, .7, 0, 1], point_size=5)
+        # print(plot.get_drawings())
         self.remove_plot(plot)
         self.remove_plot(plot_start)
-        plot.points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
-        plot_start.points = [((sessions.index(session)), round(session['accuracy']*100, 1)) for session in sessions]
+        plot.points = [((sessions.index(session)), 
+                        round(session['accuracy']*100, 1)) for session in sessions]
+        plot_start.points = [((sessions.index(session)), 
+                        round(session['accuracy']*100, 1)) for session in sessions]
         self.add_plot(plot)
         self.add_plot(plot_start)
     
@@ -306,7 +311,6 @@ class Config(Screen):
     def del_all_saved_session(self):
         App.get_running_app().root.reset_data()
         
-
 
 class Splashscore(App):
 
